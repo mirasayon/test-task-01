@@ -1,0 +1,63 @@
+{
+    "name": "test-task",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "node --watch --env-file=.env.development ./src/server/bootstrap.ts",
+        "start:prod": "node --env-file=.env.production ./src/server/bootstrap.ts",
+        "start:test": "node --env-file=.env.test ./src/server/bootstrap.ts",
+        "start:dev": "node --env-file=.env.development ./src/server/bootstrap.ts",
+        "ts:watch": "tsc --watch --noEmit",
+        "ts:check": "tsc --noEmit",
+        "fmt": "prettier . --write --ignore-unknown --config prettier.config.ts",
+        "postinstall": "npm run prisma:gen",
+        "std:dev": "prisma studio --port 3887 --config ./prisma/configs/dev.prisma.ts",
+        "prisma:fmt": "prisma format --schema ./prisma/schemas/main.prisma",
+        "prisma:gen": "prisma generate --schema ./prisma/schemas/main.prisma",
+        "prisma:push": "prisma db push --config ./prisma/configs/dev.prisma.ts",
+        "prisma:pushF": "prisma db push --force-reset --config ./prisma/configs/dev.prisma.ts",
+        "prisma:m:dev": "prisma migrate dev --config ./prisma/configs/dev.prisma.ts",
+        "prisma:m:deploy": "prisma migrate deploy --config ./prisma/configs/prod.prisma.ts"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.3.0",
+        "@prisma/client": "^7.3.0",
+        "compression": "^1.8.1",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "date-fns": "^4.1.0",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.2.1",
+        "helmet": "^8.1.0",
+        "maxmind": "^5.0.5",
+        "morgan": "^1.10.1",
+        "pg": "^8.18.0",
+        "safest-env": "^0.0.1",
+        "swagger-ui-express": "^5.0.1",
+        "ua-parser-js": "^2.0.9",
+        "yaml": "^2.8.2",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/compression": "^1.8.1",
+        "@types/cookie-parser": "^1.4.10",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/morgan": "^1.9.10",
+        "@types/node": "^25.2.2",
+        "@types/pg": "^8.16.0",
+        "@types/swagger-ui-express": "^4.1.8",
+        "prettier": "^3.8.1",
+        "prisma": "^7.3.0",
+        "typescript": "^5.9.3"
+    },
+    "author": "https://mirasayon.com",
+    "private": true,
+    "engines": {
+        "node": ">=24"
+    },
+    "imports": {
+        "#src/*": "./src/*",
+        "#orm": "./prisma/client/client.ts"
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "NodeNext",
+        "rootDir": "./",
+        "moduleResolution": "NodeNext",
+        "baseUrl": "./",
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "allowJs": false,
+        "verbatimModuleSyntax": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmitOnError": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "allowUnreachableCode": false
+    },
+    "include": ["./src", "./prisma/client"]
+}

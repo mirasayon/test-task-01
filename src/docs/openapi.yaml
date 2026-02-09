@@ -1,0 +1,680 @@
+openapi: 3.0.3
+info:
+    title: Test Task API
+    description: |
+        API documentation for the Test Task application.
+
+        **Authentication:**
+        This API uses a signed HTTP-only cookie named `session_token`.
+        1. Call `/auth/register` or `/auth/login` to obtain the cookie.
+        2. The cookie is automatically handled by the browser/client for subsequent requests.
+    version: 1.0.0
+    contact:
+        name: Author
+        url: https://mirasayon.com
+servers:
+    - url: http://localhost:4000/api
+      description: Local Development Server
+tags:
+    - name: Auth
+      description: Authentication, registration, and session management
+    - name: Admin
+      description: Administrative actions (block, activate users) - Requires ADMIN role
+    - name: User
+      description: User profile operations
+    - name: Ping
+      description: Health check endpoint
+
+components:
+    securitySchemes:
+        cookieAuth:
+            type: apiKey
+            in: cookie
+            name: session_token
+            description: Signed HTTP-only session cookie containing the session selector and validator hash.
+
+    schemas:
+        # --- Common Response Wrapper ---
+        ApiResponse:
+            type: object
+            properties:
+                status:
+                    type: integer
+                    example: 200
+                msg:
+                    type: string
+                    example: "Operation successful"
+                ok:
+                    type: boolean
+                    example: true
+                data:
+                    type: object
+                    nullable: true
+
+        # --- Enums ---
+        UserRole:
+            type: string
+            enum: [USER, ADMIN]
+            default: USER
+            description: The role of the user in the system.
+
+        # --- Data Models ---
+        User:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: cuid
+                    example: "clq3abcdef1234567890"
+                email:
+                    type: string
+                    format: email
+                    example: "jane.doe@example.com"
+                first_name:
+                    type: string
+                    example: "Jane"
+                last_name:
+                    type: string
+                    example: "Doe"
+                patronymic:
+                    type: string
+                    example: "Marie"
+                birthdate:
+                    type: string
+                    format: date
+                    example: "1990-05-15"
+                role:
+                    $ref: "#/components/schemas/UserRole"
+                active:
+                    type: boolean
+                    example: true
+                blocked:
+                    type: boolean
+                    example: false
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+
+        Session:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: cuid
+                    example: "sess_clq3..."
+                ip:
+                    type: string
+                    format: ipv4
+                    example: "192.168.1.1"
+                ip_country:
+                    type: string
+                    nullable: true
+                    example: "United States"
+                agent:
+                    type: string
+                    nullable: true
+                    example: "Mozilla/5.0..."
+                device_type:
+                    type: string
+                    nullable: true
+                    example: "mobile"
+                device_model:
+                    type: string
+                    nullable: true
+                    example: "iPhone"
+                os:
+                    type: string
+                    nullable: true
+                    example: "iOS"
+                os_version:
+                    type: string
+                    nullable: true
+                    example: "16.0"
+                browser:
+                    type: string
+                    nullable: true
+                    example: "Safari"
+                browser_version:
+                    type: string
+                    nullable: true
+                    example: "16.0"
+                created_at:
+                    type: string
+                    format: date-time
+                expires_at:
+                    type: string
+                    format: date-time
+                last_used_at:
+                    type: string
+                    format: date-time
+
+        # --- DTOs (Request Bodies) ---
+        RegisterDto:
+            type: object
+            required:
+                - first_name
+                - last_name
+                - patronymic
+                - email
+                - birthdate
+                - password
+                - password_repeat
+                - role
+            properties:
+                first_name:
+                    type: string
+                    minLength: 1
+                    maxLength: 30
+                    pattern: "^[\\p{L}\\p{M}0-9 _'-]+$"
+                    example: "Jane"
+                last_name:
+                    type: string
+                    minLength: 1
+                    maxLength: 30
+                    pattern: "^[\\p{L}\\p{M}0-9 _'-]+$"
+                    example: "Doe"
+                patronymic:
+                    type: string
+                    minLength: 1
+                    maxLength: 30
+                    pattern: "^[\\p{L}\\p{M}0-9 _'-]+$"
+                    example: "Marie"
+                email:
+                    type: string
+                    format: email
+                    maxLength: 512
+                    example: "jane.doe@example.com"
+                birthdate:
+                    type: string
+                    format: date
+                    description: "Format: YYYY-MM-DD"
+                    example: "1990-05-15"
+                role:
+                    $ref: "#/components/schemas/UserRole"
+                password:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "SecurePass123!"
+                password_repeat:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "SecurePass123!"
+
+        LoginDto:
+            type: object
+            required:
+                - email
+                - password
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: "jane.doe@example.com"
+                password:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "SecurePass123!"
+
+        UpdatePasswordDto:
+            type: object
+            required:
+                - current_password
+                - new_password
+                - repeat_new_password
+            properties:
+                current_password:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "OldPass123!"
+                new_password:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "NewSecurePass456!"
+                repeat_new_password:
+                    type: string
+                    format: password
+                    minLength: 8
+                    maxLength: 80
+                    example: "NewSecurePass456!"
+
+    parameters:
+        UserId:
+            name: user_id
+            in: path
+            required: true
+            schema:
+                type: string
+                format: cuid
+            description: The CUID of the user target
+
+        SessionId:
+            name: session_id
+            in: path
+            required: true
+            schema:
+                type: string
+                format: cuid
+            description: The CUID of the session target
+
+paths:
+    # --------------------
+    # PING
+    # --------------------
+    /ping:
+        get:
+            tags:
+                - Ping
+            summary: Health check
+            description: Returns "pong" to verify the server is running.
+            responses:
+                200:
+                    description: Server is alive
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: string
+                                              example: "pong"
+
+    # --------------------
+    # AUTH
+    # --------------------
+    /auth/register:
+        post:
+            tags:
+                - Auth
+            summary: Register a new user
+            description: |
+                Registers a new user account. Accessible only to guests (not logged in).
+                Sets a secure, HTTP-only `session_token` cookie upon success.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/RegisterDto"
+            responses:
+                202:
+                    description: Registered successfully
+                    headers:
+                        Set-Cookie:
+                            description: Session token cookie containing the signed session ID.
+                            schema:
+                                type: string
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: boolean
+                                              example: true
+                400:
+                    description: Validation error (e.g., passwords do not match, invalid format)
+                409:
+                    description: Email already in use or user is already logged in
+
+    /auth/login:
+        post:
+            tags:
+                - Auth
+            summary: Log in
+            description: |
+                Authenticates a user. Accessible only to guests.
+                Sets a secure, HTTP-only `session_token` cookie.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/LoginDto"
+            responses:
+                202:
+                    description: Logged in successfully
+                    headers:
+                        Set-Cookie:
+                            description: Session token cookie
+                            schema:
+                                type: string
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: boolean
+                                              example: true
+                400:
+                    description: Validation error
+                401:
+                    description: Invalid credentials (email or password incorrect)
+                409:
+                    description: User is already logged in
+                403:
+                    description: Too many active sessions (Limit is 10)
+
+    /auth/whoami:
+        get:
+            tags:
+                - Auth
+            summary: Get current user info
+            description: Returns basic information about the currently authenticated user.
+            security:
+                - cookieAuth: []
+            responses:
+                200:
+                    description: Current user information
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  id:
+                                                      type: string
+                                                      format: cuid
+                                                  role:
+                                                      $ref: "#/components/schemas/UserRole"
+                                                  email:
+                                                      type: string
+                                                      format: email
+                401:
+                    description: Unauthorized (Not logged in or session expired)
+
+    /auth/upd/password:
+        patch:
+            tags:
+                - Auth
+            summary: Update password
+            description: Updates the password for the current user. Requires the old password.
+            security:
+                - cookieAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/UpdatePasswordDto"
+            responses:
+                202:
+                    description: Password updated successfully
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: boolean
+                                              example: true
+                400:
+                    description: Passwords do not match or new password is same as current
+                401:
+                    description: Invalid current password
+
+    /auth/sessions:
+        get:
+            tags:
+                - Auth
+            summary: List all active sessions
+            description: Returns a list of all active sessions for the current user.
+            security:
+                - cookieAuth: []
+            responses:
+                200:
+                    description: List of sessions
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/Session"
+
+    /auth/session/end-others:
+        delete:
+            tags:
+                - Auth
+            summary: End all sessions except current
+            description: Invalidates all other sessions for this user except the one making the request.
+            security:
+                - cookieAuth: []
+            responses:
+                204:
+                    description: Other sessions deleted successfully
+                400:
+                    description: No other sessions found (only current session exists)
+
+    /auth/session/end/{session_id}:
+        delete:
+            tags:
+                - Auth
+            summary: End a specific session
+            description: Invalidates a specific session by its ID. Cannot revoke the current session (use logout instead).
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/SessionId"
+            responses:
+                204:
+                    description: Session deleted successfully
+                400:
+                    description: Cannot end current session via this endpoint
+                404:
+                    description: Session not found
+
+    /auth/logout:
+        delete:
+            tags:
+                - Auth
+            summary: Log out
+            description: Clears the session cookie and removes the session from the database.
+            security:
+                - cookieAuth: []
+            responses:
+                204:
+                    description: Logged out successfully
+                    headers:
+                        Set-Cookie:
+                            description: Cookie cleared
+                            schema:
+                                type: string
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: boolean
+                                              example: true
+
+    # --------------------
+    # USER
+    # --------------------
+    /user/id/{user_id}:
+        get:
+            tags:
+                - User
+            summary: Get user details by ID
+            description: |
+                Retrieves user profile details.
+                - Users can only view their own profile.
+                - Admins can view any profile.
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserId"
+            responses:
+                200:
+                    description: User details
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              $ref: "#/components/schemas/User"
+                403:
+                    description: Access denied (Trying to view another user's profile without Admin role)
+                404:
+                    description: User not found
+
+    /user/block:
+        post:
+            tags:
+                - User
+            summary: Block self
+            description: Blocks the currently authenticated user's account.
+            security:
+                - cookieAuth: []
+            responses:
+                202:
+                    description: User successfully blocked
+                409:
+                    description: User is already blocked
+
+    /user/delete:
+        delete:
+            tags:
+                - User
+            summary: Delete self
+            description: Deletes the currently authenticated user's account permanently.
+            security:
+                - cookieAuth: []
+            responses:
+                204:
+                    description: User deleted successfully
+
+    # --------------------
+    # ADMIN
+    # --------------------
+    /admin/all-users:
+        get:
+            tags:
+                - Admin
+            summary: List all users
+            description: Retrieves a list of all registered users. Requires ADMIN role.
+            security:
+                - cookieAuth: []
+            responses:
+                200:
+                    description: List of all users
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/ApiResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/User"
+                403:
+                    description: Forbidden (User does not have ADMIN role)
+
+    /admin/block/{user_id}:
+        post:
+            tags:
+                - Admin
+            summary: Block a user
+            description: administrative action to block a specific user. Requires ADMIN role.
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserId"
+            responses:
+                200:
+                    description: User blocked successfully
+                409:
+                    description: User is already blocked
+                403:
+                    description: Forbidden (Not an Admin)
+
+    /admin/unblock/{user_id}:
+        post:
+            tags:
+                - Admin
+            summary: Unblock a user
+            description: Administrative action to unblock a user. Requires ADMIN role.
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserId"
+            responses:
+                200:
+                    description: User unblocked successfully
+                409:
+                    description: User is already unblocked
+                403:
+                    description: Forbidden (Not an Admin)
+
+    /admin/activate/{user_id}:
+        post:
+            tags:
+                - Admin
+            summary: Activate a user
+            description: Sets user active status to true. Requires ADMIN role.
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserId"
+            responses:
+                200:
+                    description: User activated successfully
+                409:
+                    description: User is already active
+                403:
+                    description: Forbidden (Not an Admin)
+
+    /admin/inactivate/{user_id}:
+        post:
+            tags:
+                - Admin
+            summary: Deactivate a user
+            description: Sets user active status to false. Requires ADMIN role.
+            security:
+                - cookieAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserId"
+            responses:
+                200:
+                    description: User deactivated successfully
+                409:
+                    description: User is already inactive
+                403:
+                    description: Forbidden (Not an Admin)

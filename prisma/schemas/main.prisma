@@ -1,0 +1,87 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../client"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+  engineType             = "client"
+  compilerBuild          = "fast"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+  role       RoleEnum @default(USER)
+  email      String   @unique
+  birthdate  DateTime @db.Date
+  last_name  String
+  first_name String
+  patronymic String
+
+  password Password?
+  active   Boolean   @default(false)
+  blocked  Boolean   @default(false)
+  sessions Session[]
+
+  @@index([role])
+  @@index([active])
+}
+
+model Password {
+  id           String   @id @default(cuid())
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @updatedAt @db.Timestamptz
+  by_user      User     @relation(fields: [by_user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  by_user_id   String   @unique
+  hash         String
+  salt         String
+  /// Argon2 memory (bytes).
+  memory       Int
+  /// Argon2 time cost (iterations).
+  passes       Int
+  /// Argon2 parallelism (threads).
+  parallelism  Int
+  /// Output tag/hash length (bytes).
+  tag_length   Int
+  /// Rehash when params change.
+  needs_rehash Boolean  @default(false)
+}
+
+model Session {
+  id                String   @id @default(cuid())
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @updatedAt @db.Timestamptz
+  selector          String   @unique
+  validator_hash    String
+  /// validator algorithm version.
+  algorithm_version Int      @default(1)
+  expires_at        DateTime @db.Timestamptz
+  last_used_at      DateTime @default(now()) @db.Timestamptz
+  ip                String
+  ip_country        String?
+  agent             String?
+  device_type       String?
+  device_model      String?
+  os                String?
+  os_version        String?
+  browser           String?
+  browser_version   String?
+  by_user           User     @relation(fields: [by_user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  by_user_id        String
+
+  @@index([by_user_id])
+  @@index([ip])
+  @@index([ip_country])
+  @@index([expires_at])
+}
+
+enum RoleEnum {
+  USER
+  ADMIN
+}
