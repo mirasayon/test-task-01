@@ -1,6 +1,6 @@
 # Test Task
 
-[The task itself](.github/assets/task.png)
+[The task statement](.github/assets/task.png)
 
 ## Stack
 
