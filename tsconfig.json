@@ -4,7 +4,7 @@
         "module": "NodeNext",
         "rootDir": "./",
         "moduleResolution": "NodeNext",
-        "baseUrl": "./",
+        "types": ["node"],
         "allowImportingTsExtensions": true,
         "noEmit": true,
         "allowJs": false,
